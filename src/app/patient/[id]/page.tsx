@@ -12,9 +12,10 @@ interface Patient {
   identificationNumber: string;
   status: string;
   notes: string;
-  allergies: string;  // Novo campo para alergias
-  observations: string;  // Novo campo para observações
+  allergies: string;
+  observations: string;
   tasks: { label: string; completed: boolean }[];
+  examDetails: { heartRate: string; bloodPressure: string; heartRateTime: string; bloodPressureTime: string }; // Novo campo para horários de medição
 }
 
 const PatientDetails = () => {
@@ -23,16 +24,27 @@ const PatientDetails = () => {
   const [notes, setNotes] = useState<string>("");
   const [allergies, setAllergies] = useState<string>("");
   const [observations, setObservations] = useState<string>("");
+  const [showExamModal, setShowExamModal] = useState<boolean>(false);
+  const [heartRate, setHeartRate] = useState<string>("");
+  const [bloodPressure, setBloodPressure] = useState<string>("");
+
+  // Horários fixos para medição de frequência cardíaca e pressão arterial
+  const heartRateTime = "08:00";  // 8 da manhã
+  const bloodPressureTime = "20:00"; // 20 da noite
 
   useEffect(() => {
     if (id && typeof id === "string") {
       const patientId = parseInt(id, 10);
       const foundPatient = patients.find((p) => p.id === patientId);
-      setPatient(foundPatient || null);
       if (foundPatient) {
+        setPatient(foundPatient);
         setNotes(foundPatient.notes);
         setAllergies(foundPatient.allergies);
         setObservations(foundPatient.observations);
+        setHeartRate(foundPatient.examDetails?.heartRate || "");
+        setBloodPressure(foundPatient.examDetails?.bloodPressure || "");
+      } else {
+        setPatient(null); // Garantir que o paciente seja nulo caso não encontrado
       }
     }
   }, [id]);
@@ -44,6 +56,12 @@ const PatientDetails = () => {
       patient.notes = notes;
       patient.allergies = allergies;
       patient.observations = observations;
+      patient.examDetails = { 
+        heartRate, 
+        bloodPressure, 
+        heartRateTime,
+        bloodPressureTime 
+      }; // Atualiza os detalhes do exame com horários fixos
       alert("Informações atualizadas com sucesso!");
     }
   };
@@ -52,6 +70,19 @@ const PatientDetails = () => {
     const updatedTasks = [...(patient?.tasks || [])];
     updatedTasks[index].completed = !updatedTasks[index].completed;
     setPatient({ ...patient!, tasks: updatedTasks });
+  };
+
+  const handleSaveExamDetails = () => {
+    if (patient) {
+      patient.examDetails = { 
+        heartRate, 
+        bloodPressure, 
+        heartRateTime,
+        bloodPressureTime 
+      }; // Atualiza os dados do exame físico
+      setShowExamModal(false);
+      alert("Exame físico registrado com sucesso!");
+    }
   };
 
   return (
@@ -104,6 +135,58 @@ const PatientDetails = () => {
           </li>
         ))}
       </ul>
+
+      {/* Botão de Exame Físico */}
+      <button
+        onClick={() => setShowExamModal(true)}
+        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors mb-4"
+      >
+        Exame Físico
+      </button>
+
+      {/* Modal de Exame Físico */}
+      {showExamModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h3 className="text-xl font-semibold mb-4">Exame Físico</h3>
+
+            <div className="mb-4">
+              <p className="text-lg font-medium mb-2">Frequência Cardíaca (Horário: {heartRateTime})</p>
+              <input
+                type="text"
+                value={heartRate}
+                onChange={(e) => setHeartRate(e.target.value)}
+                className="w-full p-4 border-2 border-gray-300 rounded-lg"
+              />
+            </div>
+
+            <div className="mb-4">
+              <p className="text-lg font-medium mb-2">Pressão Arterial (Horário: {bloodPressureTime})</p>
+              <input
+                type="text"
+                value={bloodPressure}
+                onChange={(e) => setBloodPressure(e.target.value)}
+                className="w-full p-4 border-2 border-gray-300 rounded-lg"
+              />
+            </div>
+
+            <div className="flex justify-between">
+              <button
+                onClick={() => setShowExamModal(false)}
+                className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500 transition-colors"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={handleSaveExamDetails}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Salvar Exame
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <button
         onClick={handleUpdate}
